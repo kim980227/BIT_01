@@ -72,6 +72,17 @@ class ServerThread extends Thread{
                     }
                 }
             }
+        } catch (FileNotFoundException e) {
+            System.out.println("File 존재하지 않음");
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            System.out.println("서버와의 연결 종료");
+            System.exit(-1);
+            throw new RuntimeException(e);
+
+        } catch (ClassNotFoundException e) {
+            System.out.println("클래스 캐스팅이 잘못되었음");
+            throw new RuntimeException(e);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -152,8 +163,17 @@ public class Chatting_with_UI extends Application {
                     else{
                         a.show();
                     }
-                } catch (Exception e) {
+                } catch (IOException e) {
+                    System.out.println("서버와의 접속이 종료");
+
                     e.printStackTrace();
+
+                    //TODO: 서버와의 연결이 종료되면 굳이 프로세스가 실행될 필요가 없다. 종료..!
+                    System.exit(-1);
+
+                } catch (Exception e2) {
+                    System.out.println("기타 에러 발생");
+                    e2.printStackTrace();
                 }
             }
         });

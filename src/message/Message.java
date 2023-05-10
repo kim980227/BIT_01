@@ -2,6 +2,7 @@ package message;
 
 import chatUser.Chat_User;
 
+import java.io.File;
 import java.io.Serializable;
 
 public class Message implements Serializable{
@@ -13,6 +14,12 @@ public class Message implements Serializable{
     private String msg;
 
     private Chat_User user;
+
+    private File file;
+
+    private String fileName;
+
+    private long fileSize;
 
     public Chat_User getUser() {
         return user;
@@ -32,6 +39,8 @@ public class Message implements Serializable{
         this.notice = notice;
     }
 
+    public void setFile(File file, String fileName, long fileSize) {this.file = file; this.fileName=fileName; this.fileSize=fileSize;}
+
 
     public String getMsg() {
         return msg;
@@ -40,6 +49,12 @@ public class Message implements Serializable{
     public Boolean getNotice() {
         return notice;
     }
+
+    public File getFile() { return file;}
+
+    public long getFileSize() { return fileSize;}
+
+    public String getFileName() { return fileName;}
 
 
 }

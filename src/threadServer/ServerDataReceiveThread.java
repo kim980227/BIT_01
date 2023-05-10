@@ -52,13 +52,22 @@ class ServerDataReceiveThread extends Thread{
 
     public void mute(Message message,String nickname) {
         message.setUser(user);
-        message.setMsg("관리자에 의해 대화가 금지되었습니다.");
-        message.setMute(true);
-
-        try {
-            ServerConnectThread.getSocketList().get(nickname).writeObject(message);
-        }catch (Exception e){
-            e.printStackTrace();
+        if (ServerConnectThread.name_socket_mapper.keySet().contains(nickname)){
+            message.setMsg("관리자에 의해 대화가 금지되었습니다.");
+            message.setMute(true);
+            try {
+                socketList.get(ServerConnectThread.name_socket_mapper.get(nickname)).writeObject(message);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        else {
+            message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+            try {
+                socketList.get(ServerConnectThread.leader).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -127,7 +136,7 @@ class ServerDataReceiveThread extends Thread{
                         switch (param[0]) {
                             case "/강퇴":
                                 break;
-                            case "/침묵":
+                            case "/차단":
                                 mute(message, param[1]);
                                 break;
                             case "/위임":

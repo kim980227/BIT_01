@@ -10,6 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 
 public class ServerConnectThread extends Thread{
+    /*
+    * 여기서 방장관리를 해야할까.
+    * static으로 방장관리를 해야할 것 같다.
+    * */
+
+    static Socket leader;
     static HashMap<Socket, ObjectOutputStream> socketList = new HashMap<>();
     public void run() {
         try {
@@ -20,6 +26,8 @@ public class ServerConnectThread extends Thread{
             while(true) {
                 Socket socket = serverSocket.accept();
                 socketList.put(socket, new ObjectOutputStream(socket.getOutputStream()));
+                if(socketList.isEmpty()) leader = socket;
+
                 System.out.println("누군가 접속됨..." + socketList.size());
                 ServerDataReceiveThread dt = new ServerDataReceiveThread(socket);
                 dt.start();

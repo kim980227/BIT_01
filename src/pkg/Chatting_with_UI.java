@@ -59,6 +59,7 @@ public class Chatting_with_UI extends Application {
         //Set Nickname
         VBox setNicknameBox = new VBox();
         setNicknameBox.setPrefSize(300, 500);
+        Chat_User user = new Chat_User();
 
         TextField nicknameField = new TextField();
         Button setNicknameBtn = new Button("닉네임 설정");
@@ -98,12 +99,15 @@ public class Chatting_with_UI extends Application {
 
                     String nickname = nicknameField.getText();
 
+                    user.setName(nickname);
+
                     Message message = new Message();
 /*
 해당부분 message 에 user 삽입 하는 것으로
                     message.setName(nickname);
 */
                     message.setMsg(nickname+"님, 환영합니다.");
+                    message.setUser(user);
                     message.setNotice(false);
 
                     oos.writeObject(message);
@@ -123,9 +127,12 @@ public class Chatting_with_UI extends Application {
                 try {
                     String msg = messageField.getText();
                     Message message = new Message();
+
 /*해당부분 message 에 user 삽입 하는 것으로
                     message.setName(nickname);
-*/                    message.setMsg(msg);
+*/
+                    message.setUser(user);
+                    message.setMsg(msg);
                     if (chkNoti.isSelected()){message.setNotice(true);}
                     else{message.setNotice(false);}
 

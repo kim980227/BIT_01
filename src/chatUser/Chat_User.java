@@ -1,8 +1,9 @@
 package chatUser;
 
 
+import java.io.Serializable;
 
-public class Chat_User{
+public class Chat_User implements Serializable {
     private String name;
     private int id;
     private boolean leader;

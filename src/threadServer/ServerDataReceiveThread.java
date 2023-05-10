@@ -30,7 +30,7 @@ class ServerDataReceiveThread extends Thread{
                 //Read
 
                 Message message  = (Message) ois.readObject();//Blocking 함수.
-                System.out.println("작성자: "+ message.getName() + " 내용: "+ message.getMsg());
+                System.out.println("작성자: "+ message.getUser().getName() + " 내용: "+ message.getMsg());
 
                 //Result를 모든 socket에게 전송하기.
                 socketList = ServerConnectThread.getSocketList();
@@ -61,6 +61,9 @@ class ServerDataReceiveThread extends Thread{
                 os.close();
                 socket.close();
                 this.interrupt();
+                if((ServerConnectThread.leader == socket) && (ServerConnectThread.socketList.size() > 1)){
+                    ServerConnectThread.leader = ServerConnectThread.socketList.keySet().stream().findFirst().get();
+                }
             } catch (Exception e3) {
                 // TODO Auto-generated catch block
                 e3.printStackTrace();

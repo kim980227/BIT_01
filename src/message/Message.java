@@ -11,6 +11,8 @@ public class Message implements Serializable{
      */
     private static final long serialVersionUID = 1L;
     private String msg;
+
+    private String name;
     private Chat_User user;
 
     public Chat_User getUser() {
@@ -19,6 +21,14 @@ public class Message implements Serializable{
 
     public void setUser(Chat_User user) {
         this.user = user;
+    }
+
+    public String getName(){
+        return name;
+    }
+
+    public void setName(String name){
+        this.name = name;
     }
 
     private boolean notice;

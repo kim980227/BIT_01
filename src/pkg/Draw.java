@@ -1,6 +1,7 @@
 package pkg;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -20,6 +21,7 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Draw extends Application {
@@ -81,6 +83,8 @@ public class Draw extends Application {
                 gc.stroke();
 
             });
+
+            canvasClose(arg0);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -94,7 +98,7 @@ public class Draw extends Application {
             if (!directory.exists()) {
                 boolean created = directory.mkdirs();
             }
-            String fileName = "Random or MD5";
+            String fileName = "chatImageTestFile";//"Random or MD5";
             File file = new File(directory, fileName); // Specify the desired file name and extension
 
             // Convert the canvas content to an image
@@ -109,11 +113,30 @@ public class Draw extends Application {
         }
         return 1;
     }
-    public void stageClose(Stage stage){
-        stage.close();
+
+    // 캔버스 저장 및 닫기
+    private void canvasClose(Stage stage) {
+        Timer saveTimer = new Timer();
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                int tick = 0;
+                System.out.println();
+                while (tick < 5) {
+                    tick++;
+                    System.out.println(tick);
+                    if (tick == 5) {
+                        Platform.runLater(() -> {
+                            saveDrawing();
+                            saveTimer.cancel(); // 타이머 중지
+                            stage.close();
+                        });
+                    }
+                }
+            }
+        };
+        saveTimer.schedule(timerTask, 5000, 1000); // 딜레이 5초후 run 실행(주기 1초마다)
     }
-
-
     public static void main(String[] args) {
         launch();
     }

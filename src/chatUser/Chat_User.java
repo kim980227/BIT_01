@@ -1,6 +1,8 @@
 package chatUser;
 
-public class Chat_User {
+import java.net.Socket;
+
+public class Chat_User extends Socket {
     private String name;
     private int id;
     private boolean leader;

@@ -4,10 +4,14 @@ import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import java.io.DataInputStream;
@@ -51,12 +55,19 @@ class ServerThread extends Thread{
 public class Chatting_with_UI extends Application {
     Socket socket = null;
 
+    // 그림그리기
+    StackPane pane = new StackPane();
+    Scene scene = new Scene(pane, 800, 500);
+    Canvas canvas = new Canvas(800,500); // 캔버스 생성 및 화면 크기 설정
+    GraphicsContext gc;
+
     @Override
     public void start(Stage arg0) throws Exception {
         //Vertical box, Horizontal box
         VBox root = new VBox();
         root.setPrefSize(300, 500);
         //----------------------------------
+
         try {
             socket = new Socket();
             socket.connect(new InetSocketAddress("localhost", 5001));
@@ -76,14 +87,7 @@ public class Chatting_with_UI extends Application {
             @Override
             public void handle(ActionEvent arg0) {
                 try {
-                    //dataoutputstream
-                    //writeutf8? 이걸 쓰면 좀 더 편하다
-                    OutputStream os = socket.getOutputStream();
-                    String msg = messageField.getText();
-                    byte[] byteMsg = msg.getBytes("utf-8");
 
-                    os.write(byteMsg);
-                    messageField.setText("");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

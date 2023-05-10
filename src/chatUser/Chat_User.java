@@ -1,8 +1,8 @@
 package chatUser;
 
-import java.net.Socket;
 
-public class Chat_User extends Socket{
+
+public class Chat_User{
     private String name;
     private int id;
     private boolean leader;
@@ -13,9 +13,7 @@ public class Chat_User extends Socket{
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) {this.name = name;}
 
     public int getId() {
         return this.id;

@@ -16,14 +16,15 @@ import message.Message;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 
 class ServerThread extends Thread{
-    Chat_User chatUser;
+    Socket socket;
     TextArea noticeArea;
     TextArea dialogArea;
     ObjectInputStream objectStream = null;
-    ServerThread(Chat_User chatUser, TextArea noticeArea, TextArea dialogArea){
-        this.chatUser = chatUser;
+    ServerThread(Socket socket, TextArea noticeArea, TextArea dialogArea){
+        this.socket = socket;
         this.noticeArea = noticeArea;
         this.dialogArea = dialogArea;
     }
@@ -31,7 +32,7 @@ class ServerThread extends Thread{
     @Override
     public void run(){
         try{
-            objectStream = new ObjectInputStream(chatUser.getInputStream());
+            objectStream = new ObjectInputStream(socket.getInputStream());
             while(true) {
                 Message message  = (Message) objectStream.readObject();
 
@@ -50,7 +51,7 @@ class ServerThread extends Thread{
 }
 
 public class Chatting_with_UI extends Application {
-    Chat_User chatUser = null;
+    Socket socket = null;
     OutputStream os = null;
     ObjectOutputStream oos = null;
     @Override
@@ -88,18 +89,20 @@ public class Chatting_with_UI extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
                 try {
-                    chatUser = new Chat_User();
-                    chatUser.connect(new InetSocketAddress("localhost", 5001));
+                    socket = new Socket();
+                    socket.connect(new InetSocketAddress("localhost", 5001));
 
-                    new ServerThread(chatUser, noticeArea, dialogArea).start();
+                    new ServerThread(socket, noticeArea, dialogArea).start();
 
-                    oos = new ObjectOutputStream(chatUser.getOutputStream());
+                    oos = new ObjectOutputStream(socket.getOutputStream());
 
                     String nickname = nicknameField.getText();
-                    chatUser.setName(nickname);
 
                     Message message = new Message();
+/*
+해당부분 message 에 user 삽입 하는 것으로
                     message.setName(nickname);
+*/
                     message.setMsg(nickname+"님, 환영합니다.");
                     message.setNotice(false);
 
@@ -120,8 +123,9 @@ public class Chatting_with_UI extends Application {
                 try {
                     String msg = messageField.getText();
                     Message message = new Message();
-                    message.setName(chatUser.getName());
-                    message.setMsg(msg);
+/*해당부분 message 에 user 삽입 하는 것으로
+                    message.setName(nickname);
+*/                    message.setMsg(msg);
                     if (chkNoti.isSelected()){message.setNotice(true);}
                     else{message.setNotice(false);}
 

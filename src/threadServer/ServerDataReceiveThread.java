@@ -173,6 +173,21 @@ class ServerDataReceiveThread extends Thread{
         return matcher.find();
     }
 
+    public void getOut(Message message, String target) {
+        if (ServerConnectThread.leader == socket) {
+            Socket opponent = ServerConnectThread.name_socket_mapper.get(target);
+
+            try {
+                ServerConnectThread.socketList.remove(opponent);
+                opponent.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else
+            message.setMsg("방장이 아닙니다.");
+    }
+
 
     public void run() {
         identify.set(false);
@@ -192,6 +207,7 @@ class ServerDataReceiveThread extends Thread{
                     if(ServerConnectThread.leader == socket){
                         switch (param[0]) {
                             case "/강퇴":
+                                getOut(message, param[1]);
                                 break;
                             case "/차단":
                                 mute(message, param[1]);

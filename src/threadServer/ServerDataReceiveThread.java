@@ -96,6 +96,7 @@ class ServerDataReceiveThread extends Thread{
                     System.out.println("w메시지:" + message.getMsg());
                     //Write
                     try {
+                        socketList.get(socket).writeObject(message);
                         socketList.get(ServerConnectThread.name_socket_mapper.get(target[1])).writeObject(message);
                     } catch (IOException e) {
                         IOExceptionHandler(e);
@@ -122,6 +123,36 @@ class ServerDataReceiveThread extends Thread{
             message.setMsg("전달할 내용이 존재하지 않습니다.");
             try {
                 socketList.get(socket).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void getOut(Message message, String target) {
+        if (ServerConnectThread.name_socket_mapper.get(target)!=ServerConnectThread.leader){
+            if (ServerConnectThread.name_socket_mapper.keySet().contains(target)){
+                Socket opponent = ServerConnectThread.name_socket_mapper.get(target);
+                try {
+                    ServerConnectThread.socketList.remove(opponent);
+                    opponent.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            else{
+                message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+                try {
+                    socketList.get(ServerConnectThread.leader).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else{
+            message.setMsg("방장 본인을 퇴장시킬 수 없습니다.");
+            try {
+                socketList.get(ServerConnectThread.leader).writeObject(message);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -172,22 +203,6 @@ class ServerDataReceiveThread extends Thread{
         Matcher matcher = Pattern.compile(pattern).matcher(command);
         return matcher.find();
     }
-
-    public void getOut(Message message, String target) {
-        if (ServerConnectThread.leader == socket) {
-            Socket opponent = ServerConnectThread.name_socket_mapper.get(target);
-
-            try {
-                ServerConnectThread.socketList.remove(opponent);
-                opponent.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        else
-            message.setMsg("방장이 아닙니다.");
-    }
-
 
     public void run() {
         identify.set(false);

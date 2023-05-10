@@ -5,8 +5,11 @@ import message.Message;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class ServerDataReceiveThread extends Thread{
 
@@ -47,6 +50,83 @@ class ServerDataReceiveThread extends Thread{
         }
     }
 
+    public void mute(Message message,String nickname) {
+        message.setUser(user);
+        if (ServerConnectThread.name_socket_mapper.keySet().contains(nickname)){
+            if(ServerConnectThread.name_socket_mapper.get(nickname)!=ServerConnectThread.leader){
+                message.setMsg("관리자에 의해 대화가 금지되었습니다.");
+                message.setMute(true);
+                try {
+                    socketList.get(ServerConnectThread.name_socket_mapper.get(nickname)).writeObject(message);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                message.setMsg("관리자 본인을 차단할 수 없습니다.");
+                try {
+                    socketList.get(ServerConnectThread.leader).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else {
+            message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+            try {
+                socketList.get(ServerConnectThread.leader).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void whisper(Message message, String[] target) {
+        if(target.length>2) {
+            if (ServerConnectThread.name_socket_mapper.keySet().contains(target[1])) {
+                if (ServerConnectThread.name_socket_mapper.get(target[1]) != socket) {
+                    socketList = ServerConnectThread.getSocketList();
+                    String content = "";
+                    for (int i = 2; i < target.length; i++) {
+                        content += target[i];
+                    }
+                    message.setUser(user);
+                    message.setMsg(message.getUser().getName() + "에게만: " + content);
+                    System.out.println("w이름: " + message.getUser().getName());
+                    System.out.println("w메시지:" + message.getMsg());
+                    //Write
+                    try {
+                        socketList.get(ServerConnectThread.name_socket_mapper.get(target[1])).writeObject(message);
+                    } catch (IOException e) {
+                        IOExceptionHandler(e);
+                    }
+                    System.out.println("Writing whisper data Finish: ");
+                } else {
+                    message.setMsg("본인에게 귓속말을 보낼 수 없습니다..");
+                    try {
+                        socketList.get(socket).writeObject(message);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+                try {
+                    socketList.get(socket).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else{
+            message.setMsg("전달할 내용이 존재하지 않습니다.");
+            try {
+                socketList.get(socket).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public void sendToAll(Message message){
         socketList = ServerConnectThread.getSocketList();
@@ -86,6 +166,13 @@ class ServerDataReceiveThread extends Thread{
         }
     }
 
+    public boolean command(String command) {
+        List<String> commandList = new ArrayList<>();
+        String pattern = "(^/)([가-힣]+)";
+        Matcher matcher = Pattern.compile(pattern).matcher(command);
+        return matcher.find();
+    }
+
 
     public void run() {
         identify.set(false);
@@ -97,7 +184,41 @@ class ServerDataReceiveThread extends Thread{
                 System.out.println("작성자: "+ message.getUser().getName() + " 내용: "+ message.getMsg());
                 checkIdentify(message);
                 checkLeader();
-                sendToAll(message);
+                boolean isOrder = command(message.getMsg());
+
+
+                if(isOrder) {
+                    String[] param = message.getMsg().split("\\s+");
+                    if(ServerConnectThread.leader == socket){
+                        switch (param[0]) {
+                            case "/강퇴":
+                                break;
+                            case "/차단":
+                                mute(message, param[1]);
+                                break;
+                            case "/위임":
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+
+                    switch(param[0]){
+                        case "/귓속말":
+                            whisper(message, param);
+                            break;
+                        case "/유저리스트":
+                            break;
+                        default:
+                            break;
+                    }
+
+                }
+                else{
+                    sendToAll(message);
+                }
+
                 //Result를 모든 socket에게 전송하기.
             }
         } catch (ClassNotFoundException e1) {

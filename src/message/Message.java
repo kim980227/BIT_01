@@ -20,7 +20,7 @@ public class Message implements Serializable{
     private String fileName;
 
     private long fileSize;
-
+    private boolean isMute=false;
     public Chat_User getUser() {
         return user;
     }
@@ -40,7 +40,7 @@ public class Message implements Serializable{
     }
 
     public void setFile(File file, String fileName, long fileSize) {this.file = file; this.fileName=fileName; this.fileSize=fileSize;}
-
+    public void setMute(boolean isMute){this.isMute = isMute;}
 
     public String getMsg() {
         return msg;
@@ -56,5 +56,5 @@ public class Message implements Serializable{
 
     public String getFileName() { return fileName;}
 
-
+    public boolean getMute(){return isMute;}
 }

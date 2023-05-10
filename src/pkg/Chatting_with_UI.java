@@ -10,55 +10,19 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import message.Message;
+import threadClient.ClientDataReceiveThread;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
-class ServerThread extends Thread{
-    Socket socket;
-    TextArea dialogArea;
-    DataInputStream dataInputStream = null;
-    ServerThread(Socket socket, TextArea dialogArea){
-        this.socket = socket;
-        this.dialogArea = dialogArea;
-    }
-
-    @Override
-    public void run(){
-        try{
-            while(true) {
-                dataInputStream = new DataInputStream(socket.getInputStream());
-                byte[] result_byte = new byte[2048];
-                for(int i = 0; i < result_byte.length; i++){
-                    result_byte[i] = 0;
-                }
-                int size = dataInputStream.read(result_byte);
-                String result = new String(result_byte, 0, size, "utf-8");
-                System.out.println(result + size);
-                result+='\n';
-                dialogArea.appendText(result);
-
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-
-}
 
 public class Chatting_with_UI extends Application {
     Socket socket = null;
     OutputStream os = null;
     ObjectOutputStream oos = null;
     @Override
-    public void start(Stage arg0) throws Exception {
+    public void start(Stage arg0)  {
         //Vertical box, Horizontal box
         VBox root = new VBox();
         root.setPrefSize(300, 500);
@@ -73,13 +37,16 @@ public class Chatting_with_UI extends Application {
             e.printStackTrace();
         }
 
+        System.out.println("바인딩 끝");
+
 
         Button sendBtn = new Button("전송");
         sendBtn.setLayoutY(300);
         TextField messageField = new TextField();
         TextArea dialogArea = new TextArea();
 
-        new ServerThread(socket, dialogArea).start();
+        new ClientDataReceiveThread(socket, dialogArea).start();
+
 
         sendBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override

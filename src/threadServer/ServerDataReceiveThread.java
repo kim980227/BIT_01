@@ -1,15 +1,16 @@
-package serverThread;
+package threadServer;
 
 import message.Message;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
 
 class ServerDataReceiveThread extends Thread{
 
     Socket socket;
-    List<Socket> socketList;
+    HashMap<Socket, ObjectOutputStream> socketList;
 
     public ServerDataReceiveThread(Socket socket) {
         // TODO Auto-generated constructor stub
@@ -35,10 +36,11 @@ class ServerDataReceiveThread extends Thread{
                 socketList = ServerConnectThread.getSocketList();
 
                 //Write
-                for (Socket currentSocket: socketList) {
-                    os = currentSocket.getOutputStream();
-                    oos = new ObjectOutputStream(os);
-                    oos.writeObject(message);
+                for (Socket currentSocket: socketList.keySet()) {
+//                    os = currentSocket.getOutputStream();
+//                    oos = new ObjectOutputStream(os);
+                    socketList.get(currentSocket).writeObject(message);
+//                    oos.writeObject(message);
                     System.out.println("Writing data Finish: ");
                     // os.close();
 

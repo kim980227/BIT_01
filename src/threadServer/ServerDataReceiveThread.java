@@ -53,12 +53,22 @@ class ServerDataReceiveThread extends Thread{
     public void mute(Message message,String nickname) {
         message.setUser(user);
         if (ServerConnectThread.name_socket_mapper.keySet().contains(nickname)){
-            message.setMsg("관리자에 의해 대화가 금지되었습니다.");
-            message.setMute(true);
-            try {
-                socketList.get(ServerConnectThread.name_socket_mapper.get(nickname)).writeObject(message);
-            }catch (Exception e){
-                e.printStackTrace();
+            if(ServerConnectThread.name_socket_mapper.get(nickname)!=ServerConnectThread.leader){
+                message.setMsg("관리자에 의해 대화가 금지되었습니다.");
+                message.setMute(true);
+                try {
+                    socketList.get(ServerConnectThread.name_socket_mapper.get(nickname)).writeObject(message);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                message.setMsg("관리자 본인을 차단할 수 없습니다.");
+                try {
+                    socketList.get(ServerConnectThread.leader).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
         else {

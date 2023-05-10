@@ -1,5 +1,7 @@
 package message;
 
+import chatUser.Chat_User;
+
 import java.io.Serializable;
 
 public class Message implements Serializable{
@@ -9,12 +11,17 @@ public class Message implements Serializable{
      */
     private static final long serialVersionUID = 1L;
     private String msg;
-    private String name;
-    private boolean notice;
+    private Chat_User user;
 
-    public void setName(String name) {
-        this.name = name;
+    public Chat_User getUser() {
+        return user;
     }
+
+    public void setUser(Chat_User user) {
+        this.user = user;
+    }
+
+    private boolean notice;
 
     public void setMsg(String msg) {
         this.msg = msg;
@@ -24,9 +31,6 @@ public class Message implements Serializable{
         this.notice = notice;
     }
 
-    public String getName() {
-        return name;
-    }
 
     public String getMsg() {
         return msg;

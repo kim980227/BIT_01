@@ -28,8 +28,8 @@ public class ClientDataReceiveThread  extends Thread{
             while(true) {
                 System.out.println("run method while");
                 Message message = (Message)objectInputStream.readObject();
-                System.out.println(message.getName() + " "+ message.getMsg());
-                dialogArea.appendText(message.getName()+"\n");
+                System.out.println(message.getUser().getName() + " "+ message.getMsg());
+                dialogArea.appendText(message.getUser().getName()+"\n");
                 dialogArea.appendText(message.getMsg()+"\n");
                 dialogArea.appendText("\n");
 

@@ -30,7 +30,7 @@ class ServerDataReceiveThread extends Thread{
                 //Read
 
                 Message message  = (Message) ois.readObject();//Blocking 함수.
-                System.out.println("작성자: "+ message.getName() + " 내용: "+ message.getMsg());
+                System.out.println("작성자: "+ message.getUser().getName() + " 내용: "+ message.getMsg());
 
                 //Result를 모든 socket에게 전송하기.
                 socketList = ServerConnectThread.getSocketList();

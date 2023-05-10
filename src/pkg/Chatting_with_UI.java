@@ -1,49 +1,117 @@
 package pkg;
+
+import chatUser.Chat_User;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import message.Message;
-import threadClient.ClientDataReceiveThread;
+
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 
+class ServerThread extends Thread{
+    Chat_User chatUser;
+    TextArea noticeArea;
+    TextArea dialogArea;
+    ObjectInputStream objectStream = null;
+    ServerThread(Chat_User chatUser, TextArea noticeArea, TextArea dialogArea){
+        this.chatUser = chatUser;
+        this.noticeArea = noticeArea;
+        this.dialogArea = dialogArea;
+    }
+
+    @Override
+    public void run(){
+        try{
+            objectStream = new ObjectInputStream(chatUser.getInputStream());
+            while(true) {
+                Message message  = (Message) objectStream.readObject();
+
+                if (!message.getNotice())
+                {dialogArea.appendText(message.getMsg()+"\n");}
+                else{
+                    noticeArea.setText(message.getMsg());
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+}
 
 public class Chatting_with_UI extends Application {
-    Socket socket = null;
+    Chat_User chatUser = null;
     OutputStream os = null;
     ObjectOutputStream oos = null;
     @Override
-    public void start(Stage arg0)  {
-        //Vertical box, Horizontal box
-        VBox root = new VBox();
-        root.setPrefSize(300, 500);
-        //----------------------------------
-        try {
-            socket = new Socket();
-            socket.connect(new InetSocketAddress("localhost", 5001));
-            os = socket.getOutputStream();
-            oos = new ObjectOutputStream(os);
+    public void start(Stage arg0) throws Exception {
+        //Set Nickname
+        VBox setNicknameBox = new VBox();
+        setNicknameBox.setPrefSize(300, 500);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        TextField nicknameField = new TextField();
+        Button setNicknameBtn = new Button("닉네임 설정");
 
-        System.out.println("바인딩 끝");
+        setNicknameBox.getChildren().addAll(nicknameField,setNicknameBtn);
+        Scene setNicknameScene = new Scene(setNicknameBox);
 
+        //Dialog Scene-----------------------------
+        VBox dialogBox = new VBox();
+        dialogBox.setPrefSize(300, 500);
 
         Button sendBtn = new Button("전송");
         sendBtn.setLayoutY(300);
+
+        CheckBox chkNoti = new CheckBox();
+
+        Button sendFileBtn = new Button("파일 전송");
+        FileChooser fileChooser = new FileChooser();
         TextField messageField = new TextField();
+        TextArea noticeArea = new TextArea();
         TextArea dialogArea = new TextArea();
 
-        new ClientDataReceiveThread(socket, dialogArea).start();
+        dialogBox.getChildren().addAll(noticeArea, dialogArea,sendBtn, sendFileBtn, messageField, chkNoti);
+        Scene dialogScene = new Scene(dialogBox);
+
+        //----------------------------------
+        setNicknameBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                try {
+                    chatUser = new Chat_User();
+                    chatUser.connect(new InetSocketAddress("localhost", 5001));
+
+                    new ServerThread(chatUser, noticeArea, dialogArea).start();
+
+                    oos = new ObjectOutputStream(chatUser.getOutputStream());
+
+                    String nickname = nicknameField.getText();
+                    chatUser.setName(nickname);
+
+                    Message message = new Message();
+                    message.setName(nickname);
+                    message.setMsg(nickname+"님, 환영합니다.");
+                    message.setNotice(false);
+
+                    oos.writeObject(message);
+
+                    arg0.setTitle("대화창");
+                    arg0.setScene(dialogScene);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
 
         sendBtn.setOnAction(new EventHandler<ActionEvent>() {
@@ -52,10 +120,13 @@ public class Chatting_with_UI extends Application {
                 try {
                     String msg = messageField.getText();
                     Message message = new Message();
-                    message.setName("주원");
+                    message.setName(chatUser.getName());
                     message.setMsg(msg);
-                    message.setNotice(false);
+                    if (chkNoti.isSelected()){message.setNotice(true);}
+                    else{message.setNotice(false);}
+
                     oos.writeObject(message);
+                    chkNoti.setSelected(false);
                     messageField.setText("");
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -63,11 +134,8 @@ public class Chatting_with_UI extends Application {
             }
         });
 
-        root.getChildren().addAll(sendBtn, messageField, dialogArea);
-        //----------------------------------
-        Scene scene = new Scene(root);
-        arg0.setScene(scene);
-        arg0.setTitle("클라이언트");
+        arg0.setScene(setNicknameScene);
+        arg0.setTitle("닉네임 설정");
         arg0.show();
 
     }

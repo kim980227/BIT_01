@@ -81,6 +81,53 @@ class ServerDataReceiveThread extends Thread{
         }
     }
 
+    public void whisper(Message message, String[] target) {
+        if(target.length>2) {
+            if (ServerConnectThread.name_socket_mapper.keySet().contains(target[1])) {
+                if (ServerConnectThread.name_socket_mapper.get(target[1]) != socket) {
+                    socketList = ServerConnectThread.getSocketList();
+                    String content = "";
+                    for (int i = 2; i < target.length; i++) {
+                        content += target[i];
+                    }
+                    message.setUser(user);
+                    message.setMsg(message.getUser().getName() + "에게만: " + content);
+                    System.out.println("w이름: " + message.getUser().getName());
+                    System.out.println("w메시지:" + message.getMsg());
+                    //Write
+                    try {
+                        socketList.get(ServerConnectThread.name_socket_mapper.get(target[1])).writeObject(message);
+                    } catch (IOException e) {
+                        IOExceptionHandler(e);
+                    }
+                    System.out.println("Writing whisper data Finish: ");
+                } else {
+                    message.setMsg("본인에게 귓속말을 보낼 수 없습니다..");
+                    try {
+                        socketList.get(socket).writeObject(message);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+                try {
+                    socketList.get(socket).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else{
+            message.setMsg("전달할 내용이 존재하지 않습니다.");
+            try {
+                socketList.get(socket).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void sendToAll(Message message){
         socketList = ServerConnectThread.getSocketList();
         message.setUser(user);
@@ -156,16 +203,17 @@ class ServerDataReceiveThread extends Thread{
                         }
                     }
 
-                    else{
-                        switch(param[0]){
-                            case "/귓속말":
-                                break;
-                            case "/유저리스트":
-                                break;
-                            default:
-                                break;
-                        }
+
+                    switch(param[0]){
+                        case "/귓속말":
+                            whisper(message, param);
+                            break;
+                        case "/유저리스트":
+                            break;
+                        default:
+                            break;
                     }
+
                 }
                 else{
                     sendToAll(message);

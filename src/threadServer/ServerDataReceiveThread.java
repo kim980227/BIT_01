@@ -5,8 +5,11 @@ import message.Message;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class ServerDataReceiveThread extends Thread{
 
@@ -47,6 +50,17 @@ class ServerDataReceiveThread extends Thread{
         }
     }
 
+    public void mute(Message message,String nickname) {
+        message.setUser(user);
+        message.setMsg("관리자에 의해 대화가 금지되었습니다.");
+        message.setMute(true);
+
+        try {
+            ServerConnectThread.getSocketList().get(nickname).writeObject(message);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 
     public void sendToAll(Message message){
         socketList = ServerConnectThread.getSocketList();
@@ -86,6 +100,13 @@ class ServerDataReceiveThread extends Thread{
         }
     }
 
+    public boolean command(String command) {
+        List<String> commandList = new ArrayList<>();
+        String pattern = "(^/)([가-힣]+)";
+        Matcher matcher = Pattern.compile(pattern).matcher(command);
+        return matcher.find();
+    }
+
 
     public void run() {
         identify.set(false);
@@ -97,7 +118,40 @@ class ServerDataReceiveThread extends Thread{
                 System.out.println("작성자: "+ message.getUser().getName() + " 내용: "+ message.getMsg());
                 checkIdentify(message);
                 checkLeader();
-                sendToAll(message);
+                boolean isOrder = command(message.getMsg());
+
+
+                if(isOrder) {
+                    String[] param = message.getMsg().split("\\s+");
+                    if(ServerConnectThread.leader == socket){
+                        switch (param[0]) {
+                            case "/강퇴":
+                                break;
+                            case "/침묵":
+                                mute(message, param[1]);
+                                break;
+                            case "/위임":
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    else{
+                        switch(param[0]){
+                            case "/귓속말":
+                                break;
+                            case "/유저리스트":
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                else{
+                    sendToAll(message);
+                }
+
                 //Result를 모든 socket에게 전송하기.
             }
         } catch (ClassNotFoundException e1) {

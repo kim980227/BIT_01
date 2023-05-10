@@ -6,6 +6,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
@@ -18,10 +19,12 @@ import java.net.InetSocketAddress;
 
 class ServerThread extends Thread{
     Chat_User chatUser;
+    TextArea noticeArea;
     TextArea dialogArea;
     ObjectInputStream objectStream = null;
-    ServerThread(Chat_User chatUser, TextArea dialogArea){
+    ServerThread(Chat_User chatUser, TextArea noticeArea, TextArea dialogArea){
         this.chatUser = chatUser;
+        this.noticeArea = noticeArea;
         this.dialogArea = dialogArea;
     }
 
@@ -30,11 +33,13 @@ class ServerThread extends Thread{
         try{
             objectStream = new ObjectInputStream(chatUser.getInputStream());
             while(true) {
-
                 Message message  = (Message) objectStream.readObject();
 
-                dialogArea.appendText(message.getMsg()+"\n");
-
+                if (!message.getNotice())
+                {dialogArea.appendText(message.getMsg()+"\n");}
+                else{
+                    noticeArea.setText(message.getMsg());
+                }
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -67,12 +72,15 @@ public class Chatting_with_UI extends Application {
         Button sendBtn = new Button("전송");
         sendBtn.setLayoutY(300);
 
+        CheckBox chkNoti = new CheckBox();
+
         Button sendFileBtn = new Button("파일 전송");
         FileChooser fileChooser = new FileChooser();
         TextField messageField = new TextField();
+        TextArea noticeArea = new TextArea();
         TextArea dialogArea = new TextArea();
 
-        dialogBox.getChildren().addAll(dialogArea,sendBtn, sendFileBtn, messageField);
+        dialogBox.getChildren().addAll(noticeArea, dialogArea,sendBtn, sendFileBtn, messageField, chkNoti);
         Scene dialogScene = new Scene(dialogBox);
 
         //----------------------------------
@@ -83,7 +91,7 @@ public class Chatting_with_UI extends Application {
                     chatUser = new Chat_User();
                     chatUser.connect(new InetSocketAddress("localhost", 5001));
 
-                    new ServerThread(chatUser, dialogArea).start();
+                    new ServerThread(chatUser, noticeArea, dialogArea).start();
 
                     oos = new ObjectOutputStream(chatUser.getOutputStream());
 
@@ -114,9 +122,11 @@ public class Chatting_with_UI extends Application {
                     Message message = new Message();
                     message.setName(chatUser.getName());
                     message.setMsg(msg);
-                    message.setNotice(false);
+                    if (chkNoti.isSelected()){message.setNotice(true);}
+                    else{message.setNotice(false);}
 
                     oos.writeObject(message);
+                    chkNoti.setSelected(false);
                     messageField.setText("");
                 } catch (Exception e) {
                     e.printStackTrace();

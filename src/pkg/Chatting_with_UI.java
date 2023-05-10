@@ -1,5 +1,4 @@
 package pkg;
-
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -11,7 +10,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import message.Message;
 import threadClient.ClientDataReceiveThread;
-
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -57,7 +55,6 @@ public class Chatting_with_UI extends Application {
                     message.setName("주원");
                     message.setMsg(msg);
                     message.setNotice(false);
-
                     oos.writeObject(message);
                     messageField.setText("");
                 } catch (Exception e) {

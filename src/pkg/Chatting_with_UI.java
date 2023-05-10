@@ -5,10 +5,7 @@ import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -23,6 +20,8 @@ class ServerThread extends Thread{
     TextArea noticeArea;
     TextArea dialogArea;
     ObjectInputStream objectStream = null;
+    FileInputStream fileInputStream = null;
+    String savePath = "./savePath";
     ServerThread(Socket socket, TextArea noticeArea, TextArea dialogArea){
         this.socket = socket;
         this.noticeArea = noticeArea;
@@ -35,11 +34,42 @@ class ServerThread extends Thread{
             objectStream = new ObjectInputStream(socket.getInputStream());
             while(true) {
                 Message message  = (Message) objectStream.readObject();
+                File file = message.getFile();
 
-                if (!message.getNotice())
-                {dialogArea.appendText(message.getMsg()+"\n");}
+                if (file!=null){
+                    long fileSize = message.getFileSize();
+                    String fileName = message.getFileName();
+
+                    File directory = new File(savePath);
+
+                    if(!directory.exists()){
+                        directory.mkdirs();
+                    }
+
+                    File createFile = new File(directory, fileName);
+
+                    try (FileOutputStream fileOutputStream = new FileOutputStream(createFile)) {
+                        byte[] buffer = new byte[8192];
+                        int byteRead = 0;
+
+                        // 1. 총 읽은 바이트가 파일사이즈보다 작고
+                        // 2. 인풋스트림에서 buffer 배열을 읽어와 byteRead에 할당
+                        // 3. 2가 -1(EOF?)가 아니면 계속 반복
+                        fileInputStream = new FileInputStream(file);
+                        while ((byteRead = fileInputStream.read()) != -1) {
+                            fileOutputStream.write(byteRead);
+                        }
+
+                        dialogArea.appendText(message.getUser().getName()+"님께서 보낸 파일이 ./savePath 폴더에 저장되었습니다.\n");
+                    }
+                }
+
                 else{
-                    noticeArea.setText(message.getMsg());
+                    if (!message.getNotice())
+                    {dialogArea.appendText(message.getMsg()+"\n");}
+                    else{
+                        noticeArea.setText(message.getMsg());
+                    }
                 }
             }
         }catch (Exception e){
@@ -85,35 +115,43 @@ public class Chatting_with_UI extends Application {
         dialogBox.getChildren().addAll(noticeArea, dialogArea,sendBtn, sendFileBtn, messageField, chkNoti);
         Scene dialogScene = new Scene(dialogBox);
 
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setContentText("텍스트를 입력해주세요!");
         //----------------------------------
         setNicknameBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
                 try {
-                    socket = new Socket();
-                    socket.connect(new InetSocketAddress("localhost", 5001));
-
-                    new ServerThread(socket, noticeArea, dialogArea).start();
-
-                    oos = new ObjectOutputStream(socket.getOutputStream());
-
                     String nickname = nicknameField.getText();
 
-                    user.setName(nickname);
+                    if (!nickname.isEmpty()) {
+                        socket = new Socket();
+                        socket.connect(new InetSocketAddress("localhost", 5001));
 
-                    Message message = new Message();
-/*
-해당부분 message 에 user 삽입 하는 것으로
-                    message.setName(nickname);
-*/
-                    message.setMsg(nickname+"님, 환영합니다.");
-                    message.setUser(user);
-                    message.setNotice(false);
+                        new ServerThread(socket, noticeArea, dialogArea).start();
 
-                    oos.writeObject(message);
+                        oos = new ObjectOutputStream(socket.getOutputStream());
 
-                    arg0.setTitle("대화창");
-                    arg0.setScene(dialogScene);
+                        user.setName(nickname);
+
+                        Message message = new Message();
+    /*
+    해당부분 message 에 user 삽입 하는 것으로
+                        message.setName(nickname);
+    */
+                        message.setMsg(nickname+"님, 환영합니다.");
+                        message.setUser(user);
+                        message.setNotice(false);
+                        message.setFile(null, null, 0);
+
+                        oos.writeObject(message);
+
+                        arg0.setTitle("대화창");
+                        arg0.setScene(dialogScene);
+                    }
+                    else{
+                        a.show();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -126,20 +164,44 @@ public class Chatting_with_UI extends Application {
             public void handle(ActionEvent arg0) {
                 try {
                     String msg = messageField.getText();
-                    Message message = new Message();
+                    if(!msg.isEmpty()){
+                        Message message = new Message();
 
-/*해당부분 message 에 user 삽입 하는 것으로
-                    message.setName(nickname);
-*/
+                        /*해당부분 message 에 user 삽입 하는 것으로
+                        message.setName(nickname);
+                        */
+                        message.setUser(user);
+                        message.setMsg(msg);
+                        message.setFile(null, null,0);
+                        if (chkNoti.isSelected()){message.setNotice(true);}
+                        else{message.setNotice(false);}
+
+                        oos.writeObject(message);
+                        chkNoti.setSelected(false);
+                        messageField.setText("");}
+                    else{
+                        a.show();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        sendFileBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                try {
+                    File file = fileChooser.showOpenDialog(arg0);
+
+                    Message message = new Message();
                     message.setUser(user);
-                    message.setMsg(msg);
-                    if (chkNoti.isSelected()){message.setNotice(true);}
-                    else{message.setNotice(false);}
+                    message.setMsg("");
+                    message.setFile(file, file.getName(), file.length());
+                    message.setNotice(false);
 
                     oos.writeObject(message);
-                    chkNoti.setSelected(false);
-                    messageField.setText("");
-                } catch (Exception e) {
+                }catch (Exception e){
                     e.printStackTrace();
                 }
             }

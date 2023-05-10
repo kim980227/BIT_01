@@ -35,7 +35,6 @@ public class Draw extends Application {
     Label lable = new Label(); // 슬라이더 객체 구분
     GridPane grid = new GridPane();
 
-
     @Override
     public void start(Stage arg0) throws Exception {
         AtomicInteger count = new AtomicInteger();
@@ -124,10 +123,10 @@ public class Draw extends Application {
                 System.out.println();
                 while (tick < 5) {
                     tick++;
-                    System.out.println(tick);
                     if (tick == 5) {
                         Platform.runLater(() -> {
-                            saveDrawing();
+                            int done = saveDrawing();
+                            System.out.println(done);
                             saveTimer.cancel(); // 타이머 중지
                             stage.close();
                         });

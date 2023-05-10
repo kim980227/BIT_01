@@ -9,9 +9,11 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import message.Message;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -33,12 +35,15 @@ class ServerThread extends Thread{
             while(true) {
                 dataInputStream = new DataInputStream(socket.getInputStream());
                 byte[] result_byte = new byte[2048];
+                for(int i = 0; i < result_byte.length; i++){
+                    result_byte[i] = 0;
+                }
                 int size = dataInputStream.read(result_byte);
                 String result = new String(result_byte, 0, size, "utf-8");
-                System.out.println(result);
-                result+="\n";
-
+                System.out.println(result + size);
+                result+='\n';
                 dialogArea.appendText(result);
+
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -50,7 +55,8 @@ class ServerThread extends Thread{
 
 public class Chatting_with_UI extends Application {
     Socket socket = null;
-
+    OutputStream os = null;
+    ObjectOutputStream oos = null;
     @Override
     public void start(Stage arg0) throws Exception {
         //Vertical box, Horizontal box
@@ -60,6 +66,9 @@ public class Chatting_with_UI extends Application {
         try {
             socket = new Socket();
             socket.connect(new InetSocketAddress("localhost", 5001));
+            os = socket.getOutputStream();
+            oos = new ObjectOutputStream(os);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,13 +85,13 @@ public class Chatting_with_UI extends Application {
             @Override
             public void handle(ActionEvent arg0) {
                 try {
-                    //dataoutputstream
-                    //writeutf8? 이걸 쓰면 좀 더 편하다
-                    OutputStream os = socket.getOutputStream();
                     String msg = messageField.getText();
-                    byte[] byteMsg = msg.getBytes("utf-8");
+                    Message message = new Message();
+                    message.setName("주원");
+                    message.setMsg(msg);
+                    message.setNotice(false);
 
-                    os.write(byteMsg);
+                    oos.writeObject(message);
                     messageField.setText("");
                 } catch (Exception e) {
                     e.printStackTrace();

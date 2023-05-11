@@ -4,97 +4,75 @@ import chatUser.Chat_User;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import message.Message;
+import threadClient.ClientDataReceiveThread;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-class ServerThread extends Thread{
-    Socket socket;
-    TextArea noticeArea;
-    TextArea dialogArea;
-    ObjectInputStream objectStream = null;
-    FileInputStream fileInputStream = null;
-    String savePath = "./savePath";
-    ServerThread(Socket socket, TextArea noticeArea, TextArea dialogArea){
-        this.socket = socket;
-        this.noticeArea = noticeArea;
-        this.dialogArea = dialogArea;
-    }
 
-    @Override
-    public void run(){
-        try{
-            objectStream = new ObjectInputStream(socket.getInputStream());
-            while(true) {
-                Message message  = (Message) objectStream.readObject();
-                File file = message.getFile();
-
-                if (file!=null){
-                    long fileSize = message.getFileSize();
-                    String fileName = message.getFileName();
-
-                    File directory = new File(savePath);
-
-                    if(!directory.exists()){
-                        directory.mkdirs();
-                    }
-
-                    File createFile = new File(directory, fileName);
-
-                    try (FileOutputStream fileOutputStream = new FileOutputStream(createFile)) {
-                        byte[] buffer = new byte[8192];
-                        int byteRead = 0;
-
-                        // 1. 총 읽은 바이트가 파일사이즈보다 작고
-                        // 2. 인풋스트림에서 buffer 배열을 읽어와 byteRead에 할당
-                        // 3. 2가 -1(EOF?)가 아니면 계속 반복
-                        fileInputStream = new FileInputStream(file);
-                        while ((byteRead = fileInputStream.read()) != -1) {
-                            fileOutputStream.write(byteRead);
-                        }
-
-                        dialogArea.appendText(message.getUser().getName()+"님께서 보낸 파일이 ./savePath 폴더에 저장되었습니다.\n");
-                    }
-                }
-
-                else{
-                    if (!message.getNotice())
-                    {dialogArea.appendText(message.getMsg()+"\n");}
-                    else{
-                        noticeArea.setText(message.getMsg());
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("File 존재하지 않음");
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            System.out.println("서버와의 연결 종료");
-            System.exit(-1);
-            throw new RuntimeException(e);
-
-        } catch (ClassNotFoundException e) {
-            System.out.println("클래스 캐스팅이 잘못되었음");
-            throw new RuntimeException(e);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-
-}
 
 public class Chatting_with_UI extends Application {
     Socket socket = null;
     OutputStream os = null;
     ObjectOutputStream oos = null;
+
+    Text title = new Text("Chatting title");
+    Text userNumber = new Text("0");
+    Region filler = new Region();
+    Button sendBtn = new Button("전송");
+    CheckBox chkNoti = new CheckBox();
+    Button sendFileBtn = new Button("파일 전송");
+    FileChooser fileChooser = new FileChooser();
+    TextField messageField = new TextField();
+    Text noticeArea = new Text("이거는 Notice입니다.");
+    TextArea dialogArea = new TextArea();
+
+    HBox makeHeader(){
+        HBox header = new HBox();
+        header.setPadding(new Insets(20, 10, 20, 10));
+        title = new Text("Chatting title");
+        userNumber = new Text("0");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        userNumber.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        filler = new Region();
+        HBox.setHgrow(filler, Priority.ALWAYS);
+        header.getChildren().addAll(title, filler, userNumber);
+        header.setStyle("-fx-background-color: #336699;");
+        return header;
+    }
+
+    VBox makeContent(){
+        VBox dialogBox = new VBox();
+        dialogBox.setPrefSize(300, 500);
+        sendBtn = new Button("전송");
+        sendBtn.setLayoutY(300);
+        chkNoti = new CheckBox();
+        sendFileBtn = new Button("파일 전송");
+        fileChooser = new FileChooser();
+        messageField = new TextField();
+        noticeArea = new Text("이거는 Notice입니다.");
+        dialogArea = new TextArea();
+        dialogArea.setEditable(false);
+        HBox sending_part = new HBox();
+        HBox.setHgrow(messageField, Priority.ALWAYS);
+
+        sending_part.getChildren().addAll(messageField,sendBtn);
+        dialogBox.getChildren().addAll(noticeArea, dialogArea,sending_part);
+
+        return dialogBox;
+
+    }
     @Override
     public void start(Stage arg0) throws Exception {
         //Set Nickname
@@ -109,22 +87,11 @@ public class Chatting_with_UI extends Application {
         Scene setNicknameScene = new Scene(setNicknameBox);
 
         //Dialog Scene-----------------------------
-        VBox dialogBox = new VBox();
-        dialogBox.setPrefSize(300, 500);
+        BorderPane border = new BorderPane();
 
-        Button sendBtn = new Button("전송");
-        sendBtn.setLayoutY(300);
-
-        CheckBox chkNoti = new CheckBox();
-
-        Button sendFileBtn = new Button("파일 전송");
-        FileChooser fileChooser = new FileChooser();
-        TextField messageField = new TextField();
-        TextArea noticeArea = new TextArea();
-        TextArea dialogArea = new TextArea();
-
-        dialogBox.getChildren().addAll(noticeArea, dialogArea,sendBtn, sendFileBtn, messageField, chkNoti);
-        Scene dialogScene = new Scene(dialogBox);
+        border.setTop(makeHeader());
+        border.setCenter(makeContent());
+        Scene dialogScene = new Scene(border);
 
         Alert a = new Alert(Alert.AlertType.INFORMATION);
         a.setContentText("텍스트를 입력해주세요!");
@@ -139,7 +106,7 @@ public class Chatting_with_UI extends Application {
                         socket = new Socket();
                         socket.connect(new InetSocketAddress("localhost", 5001));
 
-                        new ServerThread(socket, noticeArea, dialogArea).start();
+                        new ClientDataReceiveThread(socket, noticeArea, dialogArea).start();
 
                         oos = new ObjectOutputStream(socket.getOutputStream());
 

@@ -224,6 +224,20 @@ class ServerDataReceiveThread extends Thread{
         }
     }
 
+    public void helper(Message message){
+        if(socket == ServerConnectThread.leader){
+            message.setMsg("/강퇴 : 닉네임을 통해 유저를 강퇴시킵니다.\
+            \n/차단 : 닉네임을 통해 특정 유저의 대화를 차단합니다.\
+            \n/차단해제 : 대화를 차단했던 유저에게 대화 권환을 다시 부여합니다. \
+            \n/위임 : 방장 권한을 랜덤한 방 참여자에게 위임합니다.\
+            \n/귓속말 : 닉네임을 통해 귓속말을 할 대상을 정하고, 귓속말로 보낼 메세지를 전송합니다.")
+        }
+        else{
+            message.setMsg("/귓속말 : 닉네임을 통해 귓속말을 할 대상을 정하고, 귓속말로 보낼 메세지를 전송합니다.")
+        }
+        socketList.get(socket).writeObject(message);
+    }
+
     public void sendToAll(Message message){
         socketList = ServerConnectThread.getSocketList();
         message.setUser(user);
@@ -308,16 +322,21 @@ class ServerDataReceiveThread extends Thread{
                             }
                         }
                     }
-                    else{
-                        if(param.length>1){
-                            if (param[0].equals("/귓속말")) {
-                                whisper(message, param);
-                            }
+                    if(param.length>1){
+                        if (param[0].equals("/귓속말")) {
+                            whisper(message, param);
+                        }
+                        else if(param[0].equlas("/도움말")){
+                            helper(message);
                         }
                         else{
                             sendToAll(message);
                         }
                     }
+                    else{
+                        sendToAll(message);
+                    }
+                    
                 }
                 else{
                     sendToAll(message);

@@ -11,13 +11,15 @@ public class ClientDataReceiveThread extends Thread{
     Socket socket;
     TextArea noticeArea;
     TextArea dialogArea;
-    ObjectInputStream objectStream = null;
+    static ObjectInputStream objectStream;
     FileInputStream fileInputStream = null;
     String savePath = "./savePath";
-    public ClientDataReceiveThread(Socket socket, TextArea noticeArea, TextArea dialogArea){
+    TextArea userArea;
+    public ClientDataReceiveThread(Socket socket, TextArea noticeArea, TextArea dialogArea, TextArea userArea){
         this.socket = socket;
         this.noticeArea = noticeArea;
         this.dialogArea = dialogArea;
+        this.userArea = userArea;
     }
 
     @Override
@@ -57,11 +59,11 @@ public class ClientDataReceiveThread extends Thread{
                 }
 
                 else{
-                    if (!message.getNotice())
-                    {dialogArea.appendText(message.getMsg()+"\n");}
-                    else{
-                        noticeArea.setText(message.getMsg());
+                    if(message.getUser().getName().equals("서버")){
+                        userArea.setText(message.getMsg());
                     }
+                    else if(!message.getNotice()) dialogArea.appendText(message.getMsg()+"\n");
+                    else noticeArea.setText(message.getMsg());
                 }
             }
         } catch (FileNotFoundException e) {

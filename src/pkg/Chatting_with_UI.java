@@ -88,7 +88,6 @@ public class Chatting_with_UI extends Application {
         //*******************************************
         //채팅창 UI
         //직접 삭제 못하게 하는 코드
-        userArea.setPrefSize(500, 50);
 
         //*******************************************
         //
@@ -161,10 +160,8 @@ public class Chatting_with_UI extends Application {
                         socket = new Socket();
                         socket.connect(new InetSocketAddress("localhost", 5001));
 
-                        ClientUserNameThread clientUserNameThread = new ClientUserNameThread(socket, userArea);
-                        clientUserNameThread.run();
 
-                        new ClientDataReceiveThread(socket, noticeArea, dialogArea).start();
+                        new ClientDataReceiveThread(socket, noticeArea, dialogArea, userArea).start();
 
                         oos = new ObjectOutputStream(socket.getOutputStream());
 

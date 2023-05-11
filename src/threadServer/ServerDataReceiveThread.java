@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,6 +21,8 @@ class ServerDataReceiveThread extends Thread{
     Chat_User user = null;
     InputStream is = null;
     ObjectInputStream ois = null;
+
+    boolean isOrder = false;
 
     public ServerDataReceiveThread(Socket socket) {
         // TODO Auto-generated constructor stub
@@ -51,13 +54,42 @@ class ServerDataReceiveThread extends Thread{
     }
 
     public void mute(Message message,String nickname) {
-        message.setUser(user);
         if (ServerConnectThread.name_socket_mapper.keySet().contains(nickname)){
             if(ServerConnectThread.name_socket_mapper.get(nickname)!=ServerConnectThread.leader){
                 message.setMsg("관리자에 의해 대화가 금지되었습니다.");
                 message.setMute(true);
                 try {
                     socketList.get(ServerConnectThread.name_socket_mapper.get(nickname)).writeObject(message);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                message.setMsg("관리자 본인을 차단할 수 없습니다.");
+                try {
+                    socketList.get(ServerConnectThread.leader).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else {
+            message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+            try {
+                socketList.get(ServerConnectThread.leader).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void clearMute(Message message, String target){
+        if (ServerConnectThread.name_socket_mapper.keySet().contains(target)){
+            if(ServerConnectThread.name_socket_mapper.get(target)!=ServerConnectThread.leader){
+                message.setMsg("대화 차단이 해제되었습니다.");
+                message.setMute(false);
+                try {
+                    socketList.get(ServerConnectThread.name_socket_mapper.get(target)).writeObject(message);
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -96,6 +128,7 @@ class ServerDataReceiveThread extends Thread{
                     System.out.println("w메시지:" + message.getMsg());
                     //Write
                     try {
+                        socketList.get(socket).writeObject(message);
                         socketList.get(ServerConnectThread.name_socket_mapper.get(target[1])).writeObject(message);
                     } catch (IOException e) {
                         IOExceptionHandler(e);
@@ -122,6 +155,69 @@ class ServerDataReceiveThread extends Thread{
             message.setMsg("전달할 내용이 존재하지 않습니다.");
             try {
                 socketList.get(socket).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void mandate(Message message){
+        Random pickLeader = new Random();
+        Object[] participants = ServerConnectThread.name_socket_mapper.keySet().toArray();
+        ArrayList<Object> candidates = new ArrayList<Object>();
+        for(int i=0;i<participants.length;i++){
+            if(!participants[i].equals(user.getName().replace("(방장)", ""))){
+                candidates.add(participants[i]);
+            }
+        }
+
+        if(candidates.size()>0) {
+            String newLeader = (String) candidates.get(pickLeader.nextInt(candidates.size()));
+
+            ServerConnectThread.leader = ServerConnectThread.name_socket_mapper.get(newLeader);
+            ServerConnectThread.leaderChanged=true;
+
+            try {
+                message.setMsg("방장으로 임명되셨습니다.");
+                socketList.get(ServerConnectThread.leader).writeObject(message);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+        else{
+            try {
+                message.setMsg("현재 다른 참여자가 존재하지 않습니다.");
+                socketList.get(ServerConnectThread.leader).writeObject(message);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void getOut(Message message, String target) {
+        if (ServerConnectThread.name_socket_mapper.get(target)!=ServerConnectThread.leader){
+            if (ServerConnectThread.name_socket_mapper.keySet().contains(target)){
+                Socket opponent = ServerConnectThread.name_socket_mapper.get(target);
+                try {
+                    ServerConnectThread.socketList.remove(opponent);
+                    opponent.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            else{
+                message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+                try {
+                    socketList.get(ServerConnectThread.leader).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else{
+            message.setMsg("방장 본인을 퇴장시킬 수 없습니다.");
+            try {
+                socketList.get(ServerConnectThread.leader).writeObject(message);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -173,22 +269,6 @@ class ServerDataReceiveThread extends Thread{
         return matcher.find();
     }
 
-    public void getOut(Message message, String target) {
-        if (ServerConnectThread.leader == socket) {
-            Socket opponent = ServerConnectThread.name_socket_mapper.get(target);
-
-            try {
-                ServerConnectThread.socketList.remove(opponent);
-                opponent.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        else
-            message.setMsg("방장이 아닙니다.");
-    }
-
-
     public void run() {
         identify.set(false);
         try {
@@ -199,37 +279,38 @@ class ServerDataReceiveThread extends Thread{
                 System.out.println("작성자: "+ message.getUser().getName() + " 내용: "+ message.getMsg());
                 checkIdentify(message);
                 checkLeader();
-                boolean isOrder = command(message.getMsg());
+                isOrder = command(message.getMsg());
 
 
                 if(isOrder) {
                     String[] param = message.getMsg().split("\\s+");
-                    if(ServerConnectThread.leader == socket){
-                        switch (param[0]) {
-                            case "/강퇴":
+                    if(ServerConnectThread.leader == socket) {
+                        if(param.length>1){
+                            if (param[0].equals("/강퇴")) {
                                 getOut(message, param[1]);
-                                break;
-                            case "/차단":
+                            }
+                            else if (param[0].equals("/차단")) {
                                 mute(message, param[1]);
-                                break;
-                            case "/위임":
-                                break;
-                            default:
-                                break;
+                            }
+                            else if (param[0].equals("/차단해제")) {
+                                clearMute(message, param[1]);
+                            }
+                            else if (param[0].equals("/귓속말")) {
+                                whisper(message, param);
+                            }
+                            else{
+                                sendToAll(message);
+                            }
+                        }
+                        else {
+                            if (param[0].equals("/위임")) {
+                                mandate(message);
+                            }
+                            else{
+                                sendToAll(message);
+                            }
                         }
                     }
-
-
-                    switch(param[0]){
-                        case "/귓속말":
-                            whisper(message, param);
-                            break;
-                        case "/유저리스트":
-                            break;
-                        default:
-                            break;
-                    }
-
                 }
                 else{
                     sendToAll(message);

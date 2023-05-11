@@ -295,9 +295,6 @@ class ServerDataReceiveThread extends Thread{
                             else if (param[0].equals("/차단해제")) {
                                 clearMute(message, param[1]);
                             }
-                            else if (param[0].equals("/귓속말")) {
-                                whisper(message, param);
-                            }
                             else{
                                 sendToAll(message);
                             }
@@ -309,6 +306,16 @@ class ServerDataReceiveThread extends Thread{
                             else{
                                 sendToAll(message);
                             }
+                        }
+                    }
+                    else{
+                        if(param.length>1){
+                            if (param[0].equals("/귓속말")) {
+                                whisper(message, param);
+                            }
+                        }
+                        else{
+                            sendToAll(message);
                         }
                     }
                 }

@@ -10,11 +10,11 @@ import java.net.Socket;
 
 public class ClientUserNameThread extends Thread{
     Socket socket;
-    TextArea userList;
+    TextArea userArea;
     ObjectInputStream objectStream = null;
-    public ClientUserNameThread(Socket socket, TextArea userList){
+    public ClientUserNameThread(Socket socket, TextArea userArea){
         this.socket = socket;
-        this.userList = userList;
+        this.userArea = userArea;
     }
 
     public void run(){
@@ -22,6 +22,9 @@ public class ClientUserNameThread extends Thread{
             objectStream = new ObjectInputStream(socket.getInputStream());
             while(true){
                 Message message = (Message)objectStream.readObject();
+                if(message.getUser().getName().equals("서버") && message.getMsg().contains("[")){
+                    userArea.setText(message.getMsg());
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

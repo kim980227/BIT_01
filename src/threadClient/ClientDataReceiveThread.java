@@ -9,12 +9,12 @@ import java.net.Socket;
 
 public class ClientDataReceiveThread extends Thread{
     Socket socket;
-    Text noticeArea;
+    TextArea noticeArea;
     TextArea dialogArea;
     ObjectInputStream objectStream = null;
     FileInputStream fileInputStream = null;
     String savePath = "./savePath";
-    public ClientDataReceiveThread(Socket socket, Text noticeArea, TextArea dialogArea){
+    public ClientDataReceiveThread(Socket socket, TextArea noticeArea, TextArea dialogArea){
         this.socket = socket;
         this.noticeArea = noticeArea;
         this.dialogArea = dialogArea;

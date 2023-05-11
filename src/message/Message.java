@@ -21,6 +21,7 @@ public class Message implements Serializable{
 
     private long fileSize;
     private Boolean isMute;
+    private Object[] participants;
     public Chat_User getUser() {
         return user;
     }
@@ -41,6 +42,7 @@ public class Message implements Serializable{
 
     public void setFile(File file, String fileName, long fileSize) {this.file = file; this.fileName=fileName; this.fileSize=fileSize;}
     public void setMute(Boolean isMute){this.isMute = isMute;}
+    public void setParticipants(Object[] participants){this.participants = participants;}
 
     public String getMsg() {
         return msg;
@@ -57,4 +59,6 @@ public class Message implements Serializable{
     public String getFileName() { return fileName;}
 
     public Boolean getMute(){return isMute;}
+
+    public Object[] getParticipants(){return participants;}
 }

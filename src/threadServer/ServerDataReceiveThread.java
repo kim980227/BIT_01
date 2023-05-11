@@ -246,6 +246,7 @@ class ServerDataReceiveThread extends Thread{
         socketList = ServerConnectThread.getSocketList();
         message.setUser(user);
         message.setMsg(message.getUser().getName() + ": "+message.getMsg());
+        message.setParticipants(ServerConnectThread.name_socket_mapper.keySet().toArray());
         System.out.println("이름: "+message.getUser().getName());
         System.out.println("메시지:" + message.getMsg());
         //Write

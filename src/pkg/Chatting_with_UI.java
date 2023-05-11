@@ -15,8 +15,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import threadClient.ClientDataReceiveThread;
-import threadClient.ClientUserNameThread;
+import javafx.stage.WindowEvent;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -235,6 +234,21 @@ public class Chatting_with_UI extends Application {
 
                     oos.writeObject(message);
                 }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        arg0.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent windowEvent) {
+                try{
+                    Message message = new Message();
+                    message.setUser(user);
+                    message.setMsg(user.getName()+"님이 퇴장하셨습니다.");
+
+                    oos.writeObject(message);
+                }catch(Exception e){
                     e.printStackTrace();
                 }
             }

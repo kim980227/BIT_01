@@ -1,8 +1,9 @@
 package threadClient;
 
+import message.Message;
+
 import javafx.scene.control.TextArea;
 import javafx.scene.text.Text;
-import message.Message;
 
 import java.io.*;
 import java.net.Socket;
@@ -62,7 +63,13 @@ public class ClientDataReceiveThread extends Thread{
                     if(message.getUser().getName().equals("서버")){
                         userArea.setText(message.getMsg());
                     }
-                    else if(!message.getNotice()) dialogArea.appendText(message.getMsg()+"\n");
+                    if(!message.getNotice()) dialogArea.appendText(message.getMsg()+"\n");
+                    if(message.getParticipants()!=null){
+                        for(Object i:message.getParticipants()){
+                            userArea.clear();
+                            userArea.appendText((String)i);
+                        }
+                    }
                     else noticeArea.setText(message.getMsg());
                 }
             }

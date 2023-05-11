@@ -33,6 +33,7 @@ class ServerDataReceiveThread extends Thread{
         System.out.println("클라이언트와의 접속이 종료");
         socketList = ServerConnectThread.getSocketList();
         socketList.remove(socket);
+        ServerConnectThread.name_socket_mapper.remove(user.getName());
         System.out.println("현재인원: "+ socketList.size());
         if((ServerConnectThread.leader == socket) && (ServerConnectThread.socketList.size() >= 1)){
             ServerConnectThread.leader = ServerConnectThread.socketList.keySet().stream().findFirst().get();
@@ -129,6 +130,7 @@ class ServerDataReceiveThread extends Thread{
                     //Write
                     try {
                         socketList.get(socket).writeObject(message);
+                        message.setMsg("(귓속말)" + user.getName()+": " + content);
                         socketList.get(ServerConnectThread.name_socket_mapper.get(target[1])).writeObject(message);
                     } catch (IOException e) {
                         IOExceptionHandler(e);

@@ -1,4 +1,5 @@
 package pkg;
+import threadClient.ClientDataReceiveThread;
 
 import chatUser.Chat_User;
 import message.Message;
@@ -20,6 +21,7 @@ import javafx.stage.WindowEvent;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
 
 
 public class Chatting_with_UI extends Application {
@@ -248,8 +250,12 @@ public class Chatting_with_UI extends Application {
                     message.setMsg(user.getName()+"님이 퇴장하셨습니다.");
 
                     oos.writeObject(message);
+
+
                 }catch(Exception e){
                     e.printStackTrace();
+                }finally {
+                    System.exit(-1);
                 }
             }
         });

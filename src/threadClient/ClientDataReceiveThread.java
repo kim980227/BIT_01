@@ -65,9 +65,10 @@ public class ClientDataReceiveThread extends Thread{
                     }
                     if(!message.getNotice()) dialogArea.appendText(message.getMsg()+"\n");
                     if(message.getParticipants()!=null){
+                        userArea.clear();
                         for(Object i:message.getParticipants()){
-                            userArea.clear();
-                            userArea.appendText((String)i);
+
+                            userArea.appendText((String)i + '\n');
                         }
                     }
                     else noticeArea.setText(message.getMsg());

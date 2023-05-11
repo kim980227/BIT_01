@@ -51,13 +51,42 @@ class ServerDataReceiveThread extends Thread{
     }
 
     public void mute(Message message,String nickname) {
-        message.setUser(user);
         if (ServerConnectThread.name_socket_mapper.keySet().contains(nickname)){
             if(ServerConnectThread.name_socket_mapper.get(nickname)!=ServerConnectThread.leader){
                 message.setMsg("관리자에 의해 대화가 금지되었습니다.");
                 message.setMute(true);
                 try {
                     socketList.get(ServerConnectThread.name_socket_mapper.get(nickname)).writeObject(message);
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                message.setMsg("관리자 본인을 차단할 수 없습니다.");
+                try {
+                    socketList.get(ServerConnectThread.leader).writeObject(message);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else {
+            message.setMsg("해당 닉네임을 사용하는 참가자가 존재하지 않습니다.");
+            try {
+                socketList.get(ServerConnectThread.leader).writeObject(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void clearMute(Message message, String target){
+        if (ServerConnectThread.name_socket_mapper.keySet().contains(target)){
+            if(ServerConnectThread.name_socket_mapper.get(target)!=ServerConnectThread.leader){
+                message.setMsg("대화 차단이 해제되었습니다.");
+                message.setMute(false);
+                try {
+                    socketList.get(ServerConnectThread.name_socket_mapper.get(target)).writeObject(message);
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -227,9 +256,13 @@ class ServerDataReceiveThread extends Thread{
                             case "/차단":
                                 mute(message, param[1]);
                                 break;
+                            case "/차단해제":
+                                clearMute(message, param[1]);
+                                break;
                             case "/위임":
                                 break;
                             default:
+                                sendToAll(message);
                                 break;
                         }
                     }
@@ -239,9 +272,8 @@ class ServerDataReceiveThread extends Thread{
                         case "/귓속말":
                             whisper(message, param);
                             break;
-                        case "/유저리스트":
-                            break;
                         default:
+                            sendToAll(message);
                             break;
                     }
 

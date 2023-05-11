@@ -19,13 +19,16 @@ class ServerThread extends Thread{
     Socket socket;
     TextArea noticeArea;
     TextArea dialogArea;
+    Button sendBtn;
     ObjectInputStream objectStream = null;
     FileInputStream fileInputStream = null;
     String savePath = "./savePath";
-    ServerThread(Socket socket, TextArea noticeArea, TextArea dialogArea){
+
+    ServerThread(Socket socket, TextArea noticeArea, TextArea dialogArea, Button sendBtn){
         this.socket = socket;
         this.noticeArea = noticeArea;
         this.dialogArea = dialogArea;
+        this.sendBtn = sendBtn;
     }
 
     @Override
@@ -66,7 +69,21 @@ class ServerThread extends Thread{
 
                 else{
                     if (!message.getNotice())
-                    {dialogArea.appendText(message.getMsg()+"\n");}
+                    {
+                        if(message.getMute()!=null){
+                            if(message.getMute()==true&& !sendBtn.isDisabled()){
+                                sendBtn.setDisable(true);
+                                dialogArea.appendText(message.getMsg()+"\n");
+                            }
+                            if(message.getMute()==false&& sendBtn.isDisabled()){
+                                sendBtn.setDisable(false);
+                                dialogArea.appendText(message.getMsg()+"\n");
+                            }
+                        }
+                        else{
+                            dialogArea.appendText(message.getMsg()+"\n");
+                        }
+                    }
                     else{
                         noticeArea.setText(message.getMsg());
                     }
@@ -139,7 +156,7 @@ public class Chatting_with_UI extends Application {
                         socket = new Socket();
                         socket.connect(new InetSocketAddress("localhost", 5001));
 
-                        new ServerThread(socket, noticeArea, dialogArea).start();
+                        new ServerThread(socket, noticeArea, dialogArea, sendBtn).start();
 
                         oos = new ObjectOutputStream(socket.getOutputStream());
 
